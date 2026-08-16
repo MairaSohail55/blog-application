@@ -25,9 +25,6 @@ The application allows users to register, login, create blog posts, and manage t
 - HTML5
 - CSS3
 - JavaScript
-- LocalStorage
-- Git
-- GitHub
 
 ## Pages
 
