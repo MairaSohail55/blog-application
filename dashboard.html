@@ -1,29 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Dashboard - BlogApp</title>
+
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
 <header class="navbar">
+
     <div class="container nav-content">
 
-        <a href="index.html" class="logo">BlogApp</a>
+        <a href="index.html" class="logo">
+            BlogApp
+        </a>
 
         <nav>
             <a href="index.html">Home</a>
-            <a href="create-blog.html">Create Blog</a>
+
+            <a href="create-blog.html">
+                Create Blog
+            </a>
+
             <button id="logoutBtn" class="logout-btn">
                 Logout
             </button>
         </nav>
 
     </div>
+
 </header>
+
 
 <main class="container dashboard">
 
@@ -31,7 +43,10 @@
 
         <div>
             <h1>Dashboard</h1>
-            <p>Manage your blog posts.</p>
+
+            <p>
+                Manage your blog posts.
+            </p>
         </div>
 
         <a href="create-blog.html" class="btn">
@@ -40,17 +55,25 @@
 
     </div>
 
+
     <section>
 
         <h2>Your Blogs</h2>
 
-        <div id="dashboardBlogs" class="blog-grid"></div>
+        <!-- Blogs from the backend will appear here -->
+        <div
+            id="dashboardBlogs"
+            class="blog-grid">
+        </div>
 
     </section>
 
 </main>
 
-<script src="js/script.js"></script>
+
+<!-- IMPORTANT: use the folder name that actually exists -->
+<script src="javascript/script.js"></script>
 
 </body>
+
 </html>

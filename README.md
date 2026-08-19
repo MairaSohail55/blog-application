@@ -1,73 +1,43 @@
 # Blog Application
 
-A responsive blog application developed as part of Module 1 Frontend Development.
+## Module 2
 
-## About the Project
-
-This project is a frontend blog application created using HTML, CSS, and JavaScript.
-
-The application allows users to register, login, create blog posts, and manage their blogs through a dashboard.
+A full-stack blog application built with HTML, CSS,
+JavaScript, Node.js and Express.
 
 ## Features
 
-- Responsive design
 - User registration
 - User login
-- Dashboard
 - Create blog posts
-- Blog categories
-- Logout functionality
-- Browser localStorage for frontend data storage
-- Mobile-friendly interface
+- View blog posts
+- Dashboard
+- Logout
 
-## Technologies Used
+## Technologies
 
-- HTML5
-- CSS3
+- HTML
+- CSS
 - JavaScript
-- LocalStorage
-- Git
-- GitHub
+- Node.js
+- Express.js
 
-## Pages
+## API Endpoints
 
-### Home
-Displays the latest blog posts and provides navigation to other pages.
+POST /api/register
+POST /api/login
+POST /api/blogs
+GET /api/blogs
 
-### Register
-Allows a new user to create an account.
+## How to Run
 
-### Login
-Allows registered users to login.
+1. Open the backend folder
+2. Install dependencies
+3. Run the server
 
-### Dashboard
-Displays the user's blog posts.
+npm install
+node server.js
 
-### Create Blog
-Allows users to create and publish new blog posts.
+Server runs on:
 
-## Project Structure
-
-```text
-📁 blog-application
-│
-├── 📁 css
-│   └── style.css
-│
-├── 📁 js
-│   └── script.js
-│
-├── 📁 screenshots
-│   ├── home.png
-│   ├── login.png
-│   ├── register.png
-│   ├── dashboard.png
-│   └── create-blog.png
-│
-├── 📄 .gitignore
-├── 📄 README.md
-├── 📄 index.html
-├── 📄 login.html
-├── 📄 register.html
-├── 📄 dashboard.html
-└── 📄 create-blog.html
+http://localhost:5000

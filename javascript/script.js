@@ -1,202 +1,230 @@
+
 const registerForm = document.getElementById("registerForm");
 
 if (registerForm) {
+    registerForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-    registerForm.addEventListener("submit", function (e) {
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
 
-        e.preventDefault();
+        try {
+            const response = await fetch(
+                "http://localhost:5000/api/register",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password
+                    })
+                }
+            );
 
-        const name =
-            document.getElementById("registerName").value.trim();
+            const data = await response.json();
 
-        const email =
-            document.getElementById("registerEmail").value.trim();
+            if (response.ok) {
+                alert(data.message);
 
-        const password =
-            document.getElementById("registerPassword").value;
+                registerForm.reset();
 
-        const confirmPassword =
-            document.getElementById("confirmPassword").value;
-
-        if (password !== confirmPassword) {
-            alert("Passwords do not match.");
-            return;
+                window.location.href = "login.html";
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Unable to connect to the server.");
         }
-
-        const user = {
-            name: name,
-            email: email,
-            password: password
-        };
-
-        localStorage.setItem("blogUser", JSON.stringify(user));
-
-        alert("Registration successful!");
-
-        window.location.href = "login.html";
     });
 }
-
 
 const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
+    loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-    loginForm.addEventListener("submit", function (e) {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
 
-        e.preventDefault();
+        try {
+            const response = await fetch(
+                "http://localhost:5000/api/login",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password
+                    })
+                }
+            );
 
-        const email =
-            document.getElementById("loginEmail").value.trim();
+            const data = await response.json();
 
-        const password =
-            document.getElementById("loginPassword").value;
+            if (response.ok) {
+                alert(data.message);
 
-        const savedUser =
-            JSON.parse(localStorage.getItem("blogUser"));
+                localStorage.setItem(
+                    "loggedInUser",
+                    JSON.stringify(data.user)
+                );
 
-        if (!savedUser) {
-            alert("No account found. Please register first.");
-            return;
+                window.location.href = "dashboard.html";
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Unable to connect to the server.");
         }
-
-        if (
-            email === savedUser.email &&
-            password === savedUser.password
-        ) {
-
-            localStorage.setItem("isLoggedIn", "true");
-
-            alert("Login successful!");
-
-            window.location.href = "dashboard.html";
-
-        } else {
-
-            alert("Invalid email or password.");
-
-        }
-
     });
 }
-
 
 const blogForm = document.getElementById("blogForm");
 
 if (blogForm) {
+    blogForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-    blogForm.addEventListener("submit", function (e) {
+        const title = document.getElementById("blogTitle").value;
+        const category = document.getElementById("blogCategory").value;
+        const content = document.getElementById("blogContent").value;
 
-        e.preventDefault();
+        // Get logged-in user
+        const savedUser = localStorage.getItem("loggedInUser");
 
-        const title =
-            document.getElementById("blogTitle").value.trim();
+        let author = "Anonymous";
 
-        const category =
-            document.getElementById("blogCategory").value;
+        if (savedUser) {
+            const user = JSON.parse(savedUser);
+            author = user.name;
+        }
 
-        const content =
-            document.getElementById("blogContent").value.trim();
+        try {
+            const response = await fetch(
+                "http://localhost:5000/api/blogs",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        content: content,
+                        author: author,
+                        category: category
+                    })
+                }
+            );
 
-        const user =
-            JSON.parse(localStorage.getItem("blogUser"));
+            const data = await response.json();
 
-        const blogs =
-            JSON.parse(localStorage.getItem("blogs")) || [];
+            if (response.ok) {
+                alert(data.message);
 
-        const newBlog = {
+                blogForm.reset();
 
-            id: Date.now(),
+                console.log("Created blog:", data.blog);
+            } else {
+                alert(data.message);
+            }
 
-            title: title,
-
-            category: category,
-
-            content: content,
-
-            author: user ? user.name : "Anonymous",
-
-            date: new Date().toLocaleDateString()
-
-        };
-
-        blogs.push(newBlog);
-
-        localStorage.setItem(
-            "blogs",
-            JSON.stringify(blogs)
-        );
-
-        alert("Blog published successfully!");
-
-        window.location.href = "dashboard.html";
-
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Unable to connect to the server.");
+        }
     });
 }
 
-
-const dashboardBlogs =
-    document.getElementById("dashboardBlogs");
+const dashboardBlogs = document.getElementById("dashboardBlogs");
 
 if (dashboardBlogs) {
 
-    const blogs =
-        JSON.parse(localStorage.getItem("blogs")) || [];
+    async function loadDashboardBlogs() {
 
-    if (blogs.length === 0) {
+        try {
 
-        dashboardBlogs.innerHTML =
-            "<p>You haven't created any blogs yet.</p>";
+            const response = await fetch(
+                "http://localhost:5000/api/blogs"
+            );
 
-    } else {
+            const blogs = await response.json();
 
-        blogs.forEach(function (blog) {
+            if (blogs.length === 0) {
 
-            const article =
-                document.createElement("article");
+                dashboardBlogs.innerHTML = `
+                    <p>No blogs available yet.</p>
+                `;
 
-            article.className = "blog-card";
+                return;
+            }
 
-            article.innerHTML = `
+            dashboardBlogs.innerHTML = "";
 
-                <span class="category">
-                    ${blog.category}
-                </span>
+            blogs.forEach(blog => {
 
-                <h3>
-                    ${blog.title}
-                </h3>
+                const blogCard = document.createElement("div");
 
+                blogCard.className = "blog-card";
+
+                blogCard.innerHTML = `
+                    <h3>${blog.title}</h3>
+
+                    <p>
+                        <strong>Category:</strong>
+                        ${blog.category || "General"}
+                    </p>
+
+                    <p>
+                        ${blog.content}
+                    </p>
+
+                    <p>
+                        <strong>Author:</strong>
+                        ${blog.author}
+                    </p>
+                `;
+
+                dashboardBlogs.appendChild(blogCard);
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Error loading blogs:",
+                error
+            );
+
+            dashboardBlogs.innerHTML = `
                 <p>
-                    ${blog.content}
+                    Unable to load blogs.
+                    Make sure the backend server is running.
                 </p>
-
-                <small>
-                    By ${blog.author} • ${blog.date}
-                </small>
-
             `;
-
-            dashboardBlogs.appendChild(article);
-
-        });
-
+        }
     }
+
+    loadDashboardBlogs();
 }
 
-
-const logoutBtn =
-    document.getElementById("logoutBtn");
+const logoutBtn = document.getElementById("logoutBtn");
 
 if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
 
-    logoutBtn.addEventListener("click", function () {
+        localStorage.removeItem("loggedInUser");
 
-        localStorage.removeItem("isLoggedIn");
+        alert("Logged out successfully");
 
-        alert("Logged out successfully.");
-
-        window.location.href = "index.html";
-
+        window.location.href = "login.html";
     });
 }
