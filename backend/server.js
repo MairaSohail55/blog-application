@@ -1,14 +1,35 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
-const { users, blogs } = require("./data/data");
-
-require("dotenv").config();
+const User = require("./models/User");
+const Blog = require("./models/Blog");
 
 const app = express();
 
+// Middleware
 app.use(cors());
 app.use(express.json());
+
+// ===============================
+// MongoDB Connection
+// ===============================
+
+mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log("MongoDB connected successfully");
+    })
+    .catch((error) => {
+        console.error("MongoDB connection failed:", error.message);
+    });
+
+// ===============================
+// Home / Test Route
+// ===============================
 
 app.get("/", (req, res) => {
     res.json({
@@ -16,103 +37,213 @@ app.get("/", (req, res) => {
     });
 });
 
-app.post("/api/register", (req, res) => {
-    const { name, email, password } = req.body;
+// ===============================
+// REGISTER
+// POST /api/register
+// ===============================
 
-    if (!name || !email || !password) {
-        return res.status(400).json({
-            message: "All fields are required"
-        });
-    }
+app.post("/api/register", async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
 
-    const existingUser = users.find(
-        user => user.email === email
-    );
-
-    if (existingUser) {
-        return res.status(400).json({
-            message: "User already exists"
-        });
-    }
-
-    const newUser = {
-        id: users.length + 1,
-        name,
-        email,
-        password
-    };
-
-    users.push(newUser);
-
-    res.status(201).json({
-        message: "Registration successful",
-        user: {
-            id: newUser.id,
-            name: newUser.name,
-            email: newUser.email
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                message: "All fields are required"
+            });
         }
-    });
-});
-app.post("/api/login", (req, res) => {
-    const { email, password } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({
-            message: "Email and password are required"
+        // Check if user already exists
+        const existingUser = await User.findOne({
+            email: email.toLowerCase()
         });
-    }
 
-    const user = users.find(
-        user =>
-            user.email === email &&
-            user.password === password
-    );
-
-    if (!user) {
-        return res.status(401).json({
-            message: "Invalid email or password"
-        });
-    }
-
-    res.json({
-        message: "Login successful",
-        user: {
-            id: user.id,
-            name: user.name,
-            email: user.email
+        if (existingUser) {
+            return res.status(400).json({
+                message: "User already exists"
+            });
         }
-    });
-});
 
-app.post("/api/blogs", (req, res) => {
-   const { title, content, author, category } = req.body;
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (!title || !content || !author || !category) {
-        return res.status(400).json({
-            message: "Title, content and author are required"
+        // Create new user in MongoDB
+        const newUser = new User({
+            name,
+            email: email.toLowerCase(),
+            password: hashedPassword
+        });
+
+        await newUser.save();
+
+        res.status(201).json({
+            message: "Registration successful",
+            user: {
+                id: newUser._id,
+                name: newUser.name,
+                email: newUser.email
+            }
+        });
+
+    } catch (error) {
+        console.error("Registration error:", error);
+
+        res.status(500).json({
+            message: "Registration failed",
+            error: error.message
         });
     }
-
-    const newBlog = {
-        id: blogs.length + 1,
-        title,
-        category,
-        content,
-        author,
-        createdAt: new Date()
-    };
-
-    blogs.push(newBlog);
-
-    res.status(201).json({
-        message: "Blog created successfully",
-        blog: newBlog
-    });
 });
 
-app.get("/api/blogs", (req, res) => {
-    res.json(blogs);
+// ===============================
+// LOGIN
+// POST /api/login
+// ===============================
+
+app.post("/api/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Email and password are required"
+            });
+        }
+
+        // Find user in MongoDB
+        const user = await User.findOne({
+            email: email.toLowerCase()
+        });
+
+        if (!user) {
+            return res.status(401).json({
+                message: "Invalid email or password"
+            });
+        }
+
+        // Compare password
+        const passwordMatch = await bcrypt.compare(
+            password,
+            user.password
+        );
+
+        if (!passwordMatch) {
+            return res.status(401).json({
+                message: "Invalid email or password"
+            });
+        }
+
+        res.json({
+            message: "Login successful",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email
+            }
+        });
+
+    } catch (error) {
+        console.error("Login error:", error);
+
+        res.status(500).json({
+            message: "Login failed",
+            error: error.message
+        });
+    }
 });
+
+// ===============================
+// CREATE BLOG
+// POST /api/blogs
+// ===============================
+
+app.post("/api/blogs", async (req, res) => {
+    try {
+        const { title, content, author, category } = req.body;
+
+        if (!title || !content || !author || !category) {
+            return res.status(400).json({
+                message: "Title, content, author and category are required"
+            });
+        }
+
+        // Create blog in MongoDB
+        const newBlog = new Blog({
+            title,
+            content,
+            author,
+            category
+        });
+
+        await newBlog.save();
+
+        res.status(201).json({
+            message: "Blog created successfully",
+            blog: newBlog
+        });
+
+    } catch (error) {
+        console.error("Create blog error:", error);
+
+        res.status(500).json({
+            message: "Failed to create blog",
+            error: error.message
+        });
+    }
+});
+
+// ===============================
+// GET ALL BLOGS
+// GET /api/blogs
+// ===============================
+
+app.get("/api/blogs", async (req, res) => {
+    try {
+        const blogs = await Blog.find().sort({
+            createdAt: -1
+        });
+
+        res.json(blogs);
+
+    } catch (error) {
+        console.error("Get blogs error:", error);
+
+        res.status(500).json({
+            message: "Failed to get blogs",
+            error: error.message
+        });
+    }
+});
+
+// ===============================
+// GET SINGLE BLOG
+// GET /api/blogs/:id
+// ===============================
+
+app.get("/api/blogs/:id", async (req, res) => {
+    try {
+        const blog = await Blog.findById(req.params.id);
+
+        if (!blog) {
+            return res.status(404).json({
+                message: "Blog not found"
+            });
+        }
+
+        res.json(blog);
+
+    } catch (error) {
+        console.error("Get blog error:", error);
+
+        res.status(500).json({
+            message: "Failed to get blog",
+            error: error.message
+        });
+    }
+});
+
+// ===============================
+// START SERVER
+// ===============================
 
 const PORT = process.env.PORT || 5000;
 

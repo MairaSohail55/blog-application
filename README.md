@@ -1,9 +1,9 @@
 # Blog Application
 
-## Module 2
+## Module 3
 
 A full-stack blog application built with HTML, CSS,
-JavaScript, Node.js and Express.
+JavaScript, Node.js, Express and MangoDB.
 
 ## Features
 
@@ -13,6 +13,8 @@ JavaScript, Node.js and Express.
 - View blog posts
 - Dashboard
 - Logout
+- User.js
+- Blog.js
 
 ## Technologies
 
@@ -21,6 +23,7 @@ JavaScript, Node.js and Express.
 - JavaScript
 - Node.js
 - Express.js
+- MangoDB
 
 ## API Endpoints
 

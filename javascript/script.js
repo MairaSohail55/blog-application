@@ -228,3 +228,47 @@ if (logoutBtn) {
         window.location.href = "login.html";
     });
 }
+
+async function loadBlogs() {
+    const dashboardBlogs = document.getElementById("dashboardBlogs");
+
+    if (!dashboardBlogs) {
+        return;
+    }
+
+    try {
+        const response = await fetch("http://localhost:5000/api/blogs");
+
+        const blogs = await response.json();
+
+        dashboardBlogs.innerHTML = "";
+
+        if (blogs.length === 0) {
+            dashboardBlogs.innerHTML = "<p>No blogs found.</p>";
+            return;
+        }
+
+        blogs.forEach(blog => {
+            const blogCard = document.createElement("div");
+
+            blogCard.className = "blog-card";
+
+            blogCard.innerHTML = `
+                <h3>${blog.title}</h3>
+                <p><strong>Category:</strong> ${blog.category}</p>
+                <p>${blog.content}</p>
+                <p><strong>Author:</strong> ${blog.author}</p>
+            `;
+
+            dashboardBlogs.appendChild(blogCard);
+        });
+
+    } catch (error) {
+        console.error("Error loading blogs:", error);
+
+        dashboardBlogs.innerHTML =
+            "<p>Unable to load blogs.</p>";
+    }
+}
+
+loadBlogs();
