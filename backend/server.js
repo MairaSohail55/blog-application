@@ -10,7 +10,10 @@ const Blog = require("./models/Blog");
 
 const app = express();
 
+// ===============================
 // Middleware
+// ===============================
+
 app.use(cors());
 app.use(express.json());
 
@@ -52,7 +55,6 @@ app.post("/api/register", async (req, res) => {
             });
         }
 
-        // Check if user already exists
         const existingUser = await User.findOne({
             email: email.toLowerCase()
         });
@@ -63,10 +65,8 @@ app.post("/api/register", async (req, res) => {
             });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create new user in MongoDB
         const newUser = new User({
             name,
             email: email.toLowerCase(),
@@ -109,7 +109,6 @@ app.post("/api/login", async (req, res) => {
             });
         }
 
-        // Find user in MongoDB
         const user = await User.findOne({
             email: email.toLowerCase()
         });
@@ -120,7 +119,6 @@ app.post("/api/login", async (req, res) => {
             });
         }
 
-        // Compare password
         const passwordMatch = await bcrypt.compare(
             password,
             user.password
@@ -166,7 +164,6 @@ app.post("/api/blogs", async (req, res) => {
             });
         }
 
-        // Create blog in MongoDB
         const newBlog = new Blog({
             title,
             content,
@@ -237,6 +234,123 @@ app.get("/api/blogs/:id", async (req, res) => {
         res.status(500).json({
             message: "Failed to get blog",
             error: error.message
+        });
+    }
+});
+
+// ===============================
+// UPDATE BLOG
+// PUT /api/blogs/:id
+// ===============================
+
+app.put("/api/blogs/:id", async (req, res) => {
+    try {
+        const { title, content, author, category } = req.body;
+
+        if (!title || !content || !author || !category) {
+            return res.status(400).json({
+                message: "Title, content, author and category are required"
+            });
+        }
+
+        const updatedBlog = await Blog.findByIdAndUpdate(
+            req.params.id,
+            {
+                title,
+                content,
+                author,
+                category
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        if (!updatedBlog) {
+            return res.status(404).json({
+                message: "Blog not found"
+            });
+        }
+
+        res.json({
+            message: "Blog updated successfully",
+            blog: updatedBlog
+        });
+
+    } catch (error) {
+        console.error("Update blog error:", error);
+
+        res.status(500).json({
+            message: "Failed to update blog",
+            error: error.message
+        });
+    }
+});
+
+app.get("/api/blogs/:id", async (req, res) => {
+    try {
+        const blog = await Blog.findById(req.params.id);
+
+        if (!blog) {
+            return res.status(404).json({
+                message: "Blog not found"
+            });
+        }
+
+        res.json(blog);
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to fetch blog"
+        });
+    }
+});
+
+// ===============================
+// DELETE BLOG
+// DELETE /api/blogs/:id
+// ===============================
+
+app.delete("/api/blogs/:id", async (req, res) => {
+    try {
+        const deletedBlog = await Blog.findByIdAndDelete(
+            req.params.id
+        );
+
+        if (!deletedBlog) {
+            return res.status(404).json({
+                message: "Blog not found"
+            });
+        }
+
+        res.json({
+            message: "Blog deleted successfully"
+        });
+
+    } catch (error) {
+        console.error("Delete blog error:", error);
+
+        res.status(500).json({
+            message: "Failed to delete blog",
+            error: error.message
+        });
+    }
+});
+
+app.get("/api/blogs", async (req, res) => {
+    try {
+        const blogs = await Blog.find().sort({ createdAt: -1 });
+
+        res.json(blogs);
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to fetch blogs"
         });
     }
 });

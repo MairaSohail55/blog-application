@@ -1,8 +1,13 @@
+// ===============================
+// REGISTER
+// ===============================
 
 const registerForm = document.getElementById("registerForm");
 
 if (registerForm) {
+
     registerForm.addEventListener("submit", async (event) => {
+
         event.preventDefault();
 
         const name = document.getElementById("name").value;
@@ -10,13 +15,16 @@ if (registerForm) {
         const password = document.getElementById("password").value;
 
         try {
+
             const response = await fetch(
                 "http://localhost:5000/api/register",
                 {
                     method: "POST",
+
                     headers: {
                         "Content-Type": "application/json"
                     },
+
                     body: JSON.stringify({
                         name,
                         email,
@@ -28,38 +36,54 @@ if (registerForm) {
             const data = await response.json();
 
             if (response.ok) {
+
                 alert(data.message);
 
                 registerForm.reset();
 
                 window.location.href = "login.html";
+
             } else {
+
                 alert(data.message);
             }
+
         } catch (error) {
+
             console.error(error);
+
             alert("Unable to connect to the server.");
         }
     });
 }
 
+
+// ===============================
+// LOGIN
+// ===============================
+
 const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
+
     loginForm.addEventListener("submit", async (event) => {
+
         event.preventDefault();
 
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
 
         try {
+
             const response = await fetch(
                 "http://localhost:5000/api/login",
                 {
                     method: "POST",
+
                     headers: {
                         "Content-Type": "application/json"
                     },
+
                     body: JSON.stringify({
                         email,
                         password
@@ -70,6 +94,7 @@ if (loginForm) {
             const data = await response.json();
 
             if (response.ok) {
+
                 alert(data.message);
 
                 localStorage.setItem(
@@ -78,20 +103,32 @@ if (loginForm) {
                 );
 
                 window.location.href = "dashboard.html";
+
             } else {
+
                 alert(data.message);
             }
+
         } catch (error) {
+
             console.error(error);
+
             alert("Unable to connect to the server.");
         }
     });
 }
 
+
+// ===============================
+// CREATE BLOG
+// ===============================
+
 const blogForm = document.getElementById("blogForm");
 
 if (blogForm) {
+
     blogForm.addEventListener("submit", async (event) => {
+
         event.preventDefault();
 
         const title = document.getElementById("blogTitle").value;
@@ -104,18 +141,23 @@ if (blogForm) {
         let author = "Anonymous";
 
         if (savedUser) {
+
             const user = JSON.parse(savedUser);
+
             author = user.name;
         }
 
         try {
+
             const response = await fetch(
                 "http://localhost:5000/api/blogs",
                 {
                     method: "POST",
+
                     headers: {
                         "Content-Type": "application/json"
                     },
+
                     body: JSON.stringify({
                         title: title,
                         content: content,
@@ -128,21 +170,31 @@ if (blogForm) {
             const data = await response.json();
 
             if (response.ok) {
+
                 alert(data.message);
 
                 blogForm.reset();
 
                 console.log("Created blog:", data.blog);
+
             } else {
+
                 alert(data.message);
             }
 
         } catch (error) {
+
             console.error("Error:", error);
+
             alert("Unable to connect to the server.");
         }
     });
 }
+
+
+// ===============================
+// DASHBOARD
+// ===============================
 
 const dashboardBlogs = document.getElementById("dashboardBlogs");
 
@@ -158,6 +210,8 @@ if (dashboardBlogs) {
 
             const blogs = await response.json();
 
+            dashboardBlogs.innerHTML = "";
+
             if (blogs.length === 0) {
 
                 dashboardBlogs.innerHTML = `
@@ -167,8 +221,6 @@ if (dashboardBlogs) {
                 return;
             }
 
-            dashboardBlogs.innerHTML = "";
-
             blogs.forEach(blog => {
 
                 const blogCard = document.createElement("div");
@@ -176,11 +228,12 @@ if (dashboardBlogs) {
                 blogCard.className = "blog-card";
 
                 blogCard.innerHTML = `
+                    
                     <h3>${blog.title}</h3>
 
                     <p>
                         <strong>Category:</strong>
-                        ${blog.category || "General"}
+                        ${blog.category}
                     </p>
 
                     <p>
@@ -191,6 +244,22 @@ if (dashboardBlogs) {
                         <strong>Author:</strong>
                         ${blog.author}
                     </p>
+
+                    <div class="blog-actions">
+
+                        <button
+                            class="edit-btn"
+                            onclick="editBlog('${blog._id}')">
+                            Edit
+                        </button>
+
+                        <button
+                            class="delete-btn"
+                            onclick="deleteBlog('${blog._id}')">
+                            Delete
+                        </button>
+
+                    </div>
                 `;
 
                 dashboardBlogs.appendChild(blogCard);
@@ -213,12 +282,19 @@ if (dashboardBlogs) {
         }
     }
 
+    // Load dashboard blogs only once
     loadDashboardBlogs();
 }
+
+
+// ===============================
+// LOGOUT
+// ===============================
 
 const logoutBtn = document.getElementById("logoutBtn");
 
 if (logoutBtn) {
+
     logoutBtn.addEventListener("click", () => {
 
         localStorage.removeItem("loggedInUser");
@@ -226,49 +302,183 @@ if (logoutBtn) {
         alert("Logged out successfully");
 
         window.location.href = "login.html";
+
     });
 }
 
-async function loadBlogs() {
-    const dashboardBlogs = document.getElementById("dashboardBlogs");
 
-    if (!dashboardBlogs) {
+// ===============================
+// DELETE BLOG
+// ===============================
+
+async function deleteBlog(blogId) {
+
+    const confirmDelete = confirm(
+        "Are you sure you want to delete this blog?"
+    );
+
+    if (!confirmDelete) {
+
         return;
     }
 
     try {
-        const response = await fetch("http://localhost:5000/api/blogs");
 
-        const blogs = await response.json();
+        const response = await fetch(
+            `http://localhost:5000/api/blogs/${blogId}`,
+            {
+                method: "DELETE"
+            }
+        );
 
-        dashboardBlogs.innerHTML = "";
+        const data = await response.json();
 
-        if (blogs.length === 0) {
-            dashboardBlogs.innerHTML = "<p>No blogs found.</p>";
+        if (!response.ok) {
+
+            alert(
+                data.message ||
+                "Failed to delete blog"
+            );
+
             return;
         }
 
-        blogs.forEach(blog => {
-            const blogCard = document.createElement("div");
+        alert("Blog deleted successfully!");
 
-            blogCard.className = "blog-card";
+        // Reload dashboard
+        const dashboardBlogs =
+            document.getElementById("dashboardBlogs");
 
-            blogCard.innerHTML = `
-                <h3>${blog.title}</h3>
-                <p><strong>Category:</strong> ${blog.category}</p>
-                <p>${blog.content}</p>
-                <p><strong>Author:</strong> ${blog.author}</p>
-            `;
+        if (dashboardBlogs) {
 
-            dashboardBlogs.appendChild(blogCard);
-        });
+            location.reload();
+        }
 
     } catch (error) {
-        console.error("Error loading blogs:", error);
 
-        dashboardBlogs.innerHTML =
-            "<p>Unable to load blogs.</p>";
+        console.error(
+            "Delete error:",
+            error
+        );
+
+        alert(
+            "Could not connect to the server."
+        );
     }
 }
 
-loadBlogs();
+
+// ===============================
+// EDIT BLOG
+// ===============================
+
+async function editBlog(blogId) {
+
+    try {
+
+        // Get existing blog
+        const response = await fetch(
+            `http://localhost:5000/api/blogs/${blogId}`
+        );
+
+        const blog = await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                blog.message ||
+                "Blog not found"
+            );
+
+            return;
+        }
+
+
+        // Edit title
+        const title = prompt(
+            "Enter new blog title:",
+            blog.title
+        );
+
+        if (title === null) {
+
+            return;
+        }
+
+
+        // Edit category
+        const category = prompt(
+            "Enter new category:",
+            blog.category
+        );
+
+        if (category === null) {
+
+            return;
+        }
+
+
+        // Edit content
+        const content = prompt(
+            "Enter new blog content:",
+            blog.content
+        );
+
+        if (content === null) {
+
+            return;
+        }
+
+
+        // Send updated blog
+        const updateResponse = await fetch(
+            `http://localhost:5000/api/blogs/${blogId}`,
+            {
+                method: "PUT",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+
+                    title: title,
+
+                    category: category,
+
+                    content: content,
+
+                    author: blog.author
+                })
+            }
+        );
+
+        const data = await updateResponse.json();
+
+        if (!updateResponse.ok) {
+
+            alert(
+                data.message ||
+                "Failed to update blog"
+            );
+
+            return;
+        }
+
+        alert("Blog updated successfully!");
+
+        // Refresh dashboard
+        location.reload();
+
+    } catch (error) {
+
+        console.error(
+            "Edit error:",
+            error
+        );
+
+        alert(
+            "Could not connect to the server."
+        );
+    }
+}

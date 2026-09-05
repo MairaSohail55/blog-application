@@ -10,8 +10,7 @@ const blogSchema = new mongoose.Schema(
 
         category: {
             type: String,
-            required: true,
-            trim: true
+            required: true
         },
 
         content: {
@@ -21,8 +20,7 @@ const blogSchema = new mongoose.Schema(
 
         author: {
             type: String,
-            required: true,
-            trim: true
+            required: true
         }
     },
     {
