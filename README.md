@@ -1,46 +1,87 @@
 # Blog Application
 
-## Module 3
+A full-stack Blog Application developed using HTML, CSS, JavaScript, Node.js, Express.js, MongoDB, and Mongoose.
 
-A full-stack blog application built with HTML, CSS,
-JavaScript, Node.js, Express and MangoDB.
+The project was developed module by module, starting with the frontend and progressing to backend integration, database integration, and CRUD functionality.
 
-## Features
+---
 
-- User registration
-- User login
+## 🚀 Project Overview
+
+This Blog Application allows users to:
+
+- Register an account
+- Login to their account
 - Create blog posts
 - View blog posts
-- Dashboard
-- Logout
-- User.js
-- Blog.js
+- Edit existing blog posts
+- Delete blog posts
+- Manage blogs through a dashboard
+- Store users and blogs in MongoDB
 
-## Technologies
+---
 
-- HTML
-- CSS
+## 🛠️ Technologies Used
+
+### Frontend
+
+- HTML5
+- CSS3
 - JavaScript
+
+### Backend
+
 - Node.js
 - Express.js
-- MangoDB
+- REST API
 
-## API Endpoints
+### Database
 
-POST /api/register
-POST /api/login
-POST /api/blogs
-GET /api/blogs
+- MongoDB Atlas
+- Mongoose
 
-## How to Run
+### Other Tools
 
-1. Open the backend folder
-2. Install dependencies
-3. Run the server
+- Git
+- GitHub
+- Visual Studio Code
 
-npm install
-node server.js
+---
 
-Server runs on:
+## 📁 Project Structure
 
-http://localhost:5000
+```text
+blog-application/
+│
+├── backend/
+│   ├── models/
+│   │   ├── User.js
+│   │   └── Blog.js
+│   │
+│   ├── data/
+│   │   └── data.js
+│   │
+│   ├── server.js
+│   ├── package.json
+│   └── .env
+│
+├── css/
+│   └── style.css
+│
+├── javascript/
+│   └── script.js
+│
+├── screenshots/
+│   ├── home.png
+│   ├── login.png
+│   ├── register.png
+│   ├── create-blog.png
+│   └── dashboard.png
+│
+├── index.html
+├── login.html
+├── register.html
+├── create-blog.html
+├── dashboard.html
+├── .gitignore
+└── README.md
