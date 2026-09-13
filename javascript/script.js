@@ -1,4 +1,79 @@
 // ===============================
+// AUTH HELPERS
+// ===============================
+
+const API_URL = "http://localhost:5000";
+
+// Store blogs loaded on the dashboard
+const blogsCache = {};
+
+function getToken() {
+    return localStorage.getItem("token");
+}
+
+function getLoggedInUser() {
+    const savedUser = localStorage.getItem("user");
+
+    if (!savedUser) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(savedUser);
+    } catch (error) {
+        console.error("Invalid user data:", error);
+        return null;
+    }
+}
+
+function requireLogin() {
+    const token = getToken();
+
+    if (!token) {
+        alert("Please login first.");
+        window.location.href = "login.html";
+        return false;
+    }
+
+    return true;
+}
+
+
+// ===============================
+// DISPLAY USER PROFILE
+// ===============================
+
+const profileName = document.getElementById("profileName");
+const profileEmail = document.getElementById("profileEmail");
+
+if (profileName || profileEmail) {
+
+    const currentUser = getLoggedInUser();
+
+    if (currentUser) {
+
+        if (profileName) {
+            profileName.textContent = currentUser.name;
+        }
+
+        if (profileEmail) {
+            profileEmail.textContent = currentUser.email;
+        }
+
+    } else {
+
+        if (profileName) {
+            profileName.textContent = "Not logged in";
+        }
+
+        if (profileEmail) {
+            profileEmail.textContent = "Not logged in";
+        }
+    }
+}
+
+
+// ===============================
 // REGISTER
 // ===============================
 
@@ -17,7 +92,7 @@ if (registerForm) {
         try {
 
             const response = await fetch(
-                "http://localhost:5000/api/register",
+                `${API_URL}/api/register`,
                 {
                     method: "POST",
 
@@ -45,14 +120,22 @@ if (registerForm) {
 
             } else {
 
-                alert(data.message);
+                alert(
+                    data.message ||
+                    "Registration failed"
+                );
             }
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Registration error:",
+                error
+            );
 
-            alert("Unable to connect to the server.");
+            alert(
+                "Unable to connect to the server."
+            );
         }
     });
 }
@@ -70,13 +153,16 @@ if (loginForm) {
 
         event.preventDefault();
 
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
+        const email =
+            document.getElementById("email").value;
+
+        const password =
+            document.getElementById("password").value;
 
         try {
 
             const response = await fetch(
-                "http://localhost:5000/api/login",
+                `${API_URL}/api/login`,
                 {
                     method: "POST",
 
@@ -95,25 +181,43 @@ if (loginForm) {
 
             if (response.ok) {
 
-                alert(data.message);
-
+                // Save JWT token
                 localStorage.setItem(
-                    "loggedInUser",
+                    "token",
+                    data.token
+                );
+
+                // Save logged-in user
+                localStorage.setItem(
+                    "user",
                     JSON.stringify(data.user)
                 );
 
-                window.location.href = "dashboard.html";
+                alert(
+                    "Login successful!"
+                );
+
+                window.location.href =
+                    "dashboard.html";
 
             } else {
 
-                alert(data.message);
+                alert(
+                    data.message ||
+                    "Login failed"
+                );
             }
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Login error:",
+                error
+            );
 
-            alert("Unable to connect to the server.");
+            alert(
+                "Unable to connect to the server."
+            );
         }
     });
 }
@@ -123,72 +227,125 @@ if (loginForm) {
 // CREATE BLOG
 // ===============================
 
-const blogForm = document.getElementById("blogForm");
+const blogForm =
+    document.getElementById("blogForm");
 
 if (blogForm) {
 
-    blogForm.addEventListener("submit", async (event) => {
+    // Protect create blog page
+    if (!requireLogin()) {
 
-        event.preventDefault();
+        // User will be redirected
 
-        const title = document.getElementById("blogTitle").value;
-        const category = document.getElementById("blogCategory").value;
-        const content = document.getElementById("blogContent").value;
+    } else {
 
-        // Get logged-in user
-        const savedUser = localStorage.getItem("loggedInUser");
+        blogForm.addEventListener(
+            "submit",
+            async (event) => {
 
-        let author = "Anonymous";
+                event.preventDefault();
 
-        if (savedUser) {
+                const title =
+                    document.getElementById(
+                        "blogTitle"
+                    ).value;
 
-            const user = JSON.parse(savedUser);
+                const category =
+                    document.getElementById(
+                        "blogCategory"
+                    ).value;
 
-            author = user.name;
-        }
+                const content =
+                    document.getElementById(
+                        "blogContent"
+                    ).value;
 
-        try {
+                const token = getToken();
 
-            const response = await fetch(
-                "http://localhost:5000/api/blogs",
-                {
-                    method: "POST",
+                try {
 
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    const response = await fetch(
+                        `${API_URL}/api/blogs`,
+                        {
+                            method: "POST",
 
-                    body: JSON.stringify({
-                        title: title,
-                        content: content,
-                        author: author,
-                        category: category
-                    })
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+
+                                "Authorization":
+                                    `Bearer ${token}`
+                            },
+
+                            body: JSON.stringify({
+                                title,
+                                content,
+                                category
+                            })
+                        }
+                    );
+
+                    const data =
+                        await response.json();
+
+                    if (response.ok) {
+
+                        alert(
+                            data.message
+                        );
+
+                        blogForm.reset();
+
+                        console.log(
+                            "Created blog:",
+                            data.blog
+                        );
+
+                    } else {
+
+                        if (
+                            response.status === 401 ||
+                            response.status === 403
+                        ) {
+
+                            alert(
+                                "Your login session has expired. Please login again."
+                            );
+
+                            localStorage.removeItem(
+                                "token"
+                            );
+
+                            localStorage.removeItem(
+                                "user"
+                            );
+
+                            window.location.href =
+                                "login.html";
+
+                            return;
+                        }
+
+                        alert(
+                            data.message ||
+                            "Failed to create blog"
+                        );
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "Create blog error:",
+                        error
+                    );
+
+                    alert(
+                        "Unable to connect to the server."
+                    );
                 }
-            );
-
-            const data = await response.json();
-
-            if (response.ok) {
-
-                alert(data.message);
-
-                blogForm.reset();
-
-                console.log("Created blog:", data.blog);
-
-            } else {
-
-                alert(data.message);
             }
-
-        } catch (error) {
-
-            console.error("Error:", error);
-
-            alert("Unable to connect to the server.");
-        }
-    });
+        );
+    }
 }
 
 
@@ -196,94 +353,214 @@ if (blogForm) {
 // DASHBOARD
 // ===============================
 
-const dashboardBlogs = document.getElementById("dashboardBlogs");
+const dashboardBlogs =
+    document.getElementById(
+        "dashboardBlogs"
+    );
 
 if (dashboardBlogs) {
 
-    async function loadDashboardBlogs() {
+    // Protect dashboard
+    if (!requireLogin()) {
 
-        try {
+        // User will be redirected
 
-            const response = await fetch(
-                "http://localhost:5000/api/blogs"
-            );
+    } else {
 
-            const blogs = await response.json();
+        async function loadDashboardBlogs() {
 
-            dashboardBlogs.innerHTML = "";
+            const token = getToken();
 
-            if (blogs.length === 0) {
+            const currentUser =
+                getLoggedInUser();
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/blogs`,
+                        {
+                            headers: {
+                                "Authorization":
+                                    `Bearer ${token}`
+                            }
+                        }
+                    );
+
+                const blogs =
+                    await response.json();
+
+                // Authentication error
+                if (
+                    response.status === 401 ||
+                    response.status === 403
+                ) {
+
+                    alert(
+                        "Your login session has expired. Please login again."
+                    );
+
+                    localStorage.removeItem(
+                        "token"
+                    );
+
+                    localStorage.removeItem(
+                        "user"
+                    );
+
+                    window.location.href =
+                        "login.html";
+
+                    return;
+                }
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        blogs.message ||
+                        "Failed to load blogs"
+                    );
+                }
+
+                dashboardBlogs.innerHTML = "";
+
+                // Clear old cache
+                Object.keys(
+                    blogsCache
+                ).forEach((key) => {
+
+                    delete blogsCache[key];
+
+                });
+
+
+                /*
+                 * Backend already returns only
+                 * the logged-in user's blogs.
+                 */
+
+                let userBlogs = blogs;
+
+
+                /*
+                 * Extra frontend filtering
+                 * by author name.
+                 */
+
+                if (
+                    currentUser &&
+                    currentUser.name
+                ) {
+
+                    userBlogs =
+                        blogs.filter(
+                            (blog) =>
+                                blog.author ===
+                                currentUser.name
+                        );
+                }
+
+
+                // No blogs
+                if (
+                    userBlogs.length === 0
+                ) {
+
+                    dashboardBlogs.innerHTML = `
+                        <p>
+                            No blogs created by you yet.
+                        </p>
+                    `;
+
+                    return;
+                }
+
+
+                // Display blogs
+                userBlogs.forEach(
+                    (blog) => {
+
+                        // Store blog in cache
+                        blogsCache[
+                            blog._id
+                        ] = blog;
+
+
+                        const blogCard =
+                            document.createElement(
+                                "div"
+                            );
+
+                        blogCard.className =
+                            "blog-card";
+
+
+                        blogCard.innerHTML = `
+                            
+                            <h3>
+                                ${blog.title}
+                            </h3>
+
+                            <p>
+                                <strong>
+                                    Category:
+                                </strong>
+                                ${blog.category}
+                            </p>
+
+                            <p>
+                                ${blog.content}
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Author:
+                                </strong>
+                                ${blog.author}
+                            </p>
+
+                            <div class="blog-actions">
+
+                                <button
+                                    class="edit-btn"
+                                    onclick="editBlog('${blog._id}')">
+                                    Edit
+                                </button>
+
+                                <button
+                                    class="delete-btn"
+                                    onclick="deleteBlog('${blog._id}')">
+                                    Delete
+                                </button>
+
+                            </div>
+                        `;
+
+
+                        dashboardBlogs.appendChild(
+                            blogCard
+                        );
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Error loading blogs:",
+                    error
+                );
 
                 dashboardBlogs.innerHTML = `
-                    <p>No blogs available yet.</p>
+                    <p>
+                        Unable to load blogs.
+                        Make sure the backend server is running.
+                    </p>
                 `;
-
-                return;
             }
-
-            blogs.forEach(blog => {
-
-                const blogCard = document.createElement("div");
-
-                blogCard.className = "blog-card";
-
-                blogCard.innerHTML = `
-                    
-                    <h3>${blog.title}</h3>
-
-                    <p>
-                        <strong>Category:</strong>
-                        ${blog.category}
-                    </p>
-
-                    <p>
-                        ${blog.content}
-                    </p>
-
-                    <p>
-                        <strong>Author:</strong>
-                        ${blog.author}
-                    </p>
-
-                    <div class="blog-actions">
-
-                        <button
-                            class="edit-btn"
-                            onclick="editBlog('${blog._id}')">
-                            Edit
-                        </button>
-
-                        <button
-                            class="delete-btn"
-                            onclick="deleteBlog('${blog._id}')">
-                            Delete
-                        </button>
-
-                    </div>
-                `;
-
-                dashboardBlogs.appendChild(blogCard);
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Error loading blogs:",
-                error
-            );
-
-            dashboardBlogs.innerHTML = `
-                <p>
-                    Unable to load blogs.
-                    Make sure the backend server is running.
-                </p>
-            `;
         }
-    }
 
-    // Load dashboard blogs only once
-    loadDashboardBlogs();
+        loadDashboardBlogs();
+    }
 }
 
 
@@ -291,19 +568,44 @@ if (dashboardBlogs) {
 // LOGOUT
 // ===============================
 
-const logoutBtn = document.getElementById("logoutBtn");
+const logoutBtn =
+    document.getElementById(
+        "logoutBtn"
+    );
 
 if (logoutBtn) {
 
-    logoutBtn.addEventListener("click", () => {
+    logoutBtn.addEventListener(
+        "click",
+        () => {
 
-        localStorage.removeItem("loggedInUser");
+            // Remove JWT
+            localStorage.removeItem(
+                "token"
+            );
 
-        alert("Logged out successfully");
+            // Remove user information
+            localStorage.removeItem(
+                "user"
+            );
 
-        window.location.href = "login.html";
+            // Clear blog cache
+            Object.keys(
+                blogsCache
+            ).forEach((key) => {
 
-    });
+                delete blogsCache[key];
+
+            });
+
+            alert(
+                "Logged out successfully"
+            );
+
+            window.location.href =
+                "login.html";
+        }
+    );
 }
 
 
@@ -313,25 +615,65 @@ if (logoutBtn) {
 
 async function deleteBlog(blogId) {
 
-    const confirmDelete = confirm(
-        "Are you sure you want to delete this blog?"
-    );
-
-    if (!confirmDelete) {
-
+    // Check login
+    if (!requireLogin()) {
         return;
     }
 
-    try {
-
-        const response = await fetch(
-            `http://localhost:5000/api/blogs/${blogId}`,
-            {
-                method: "DELETE"
-            }
+    const confirmDelete =
+        confirm(
+            "Are you sure you want to delete this blog?"
         );
 
-        const data = await response.json();
+    if (!confirmDelete) {
+        return;
+    }
+
+    const token = getToken();
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/blogs/${blogId}`,
+                {
+                    method: "DELETE",
+
+                    headers: {
+                        "Authorization":
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+        const data =
+            await response.json();
+
+
+        // Authentication error
+        if (
+            response.status === 401 ||
+            response.status === 403
+        ) {
+
+            alert(
+                "Your login session has expired. Please login again."
+            );
+
+            localStorage.removeItem(
+                "token"
+            );
+
+            localStorage.removeItem(
+                "user"
+            );
+
+            window.location.href =
+                "login.html";
+
+            return;
+        }
+
 
         if (!response.ok) {
 
@@ -343,16 +685,18 @@ async function deleteBlog(blogId) {
             return;
         }
 
-        alert("Blog deleted successfully!");
 
-        // Reload dashboard
-        const dashboardBlogs =
-            document.getElementById("dashboardBlogs");
+        // Remove from cache
+        delete blogsCache[blogId];
 
-        if (dashboardBlogs) {
 
-            location.reload();
-        }
+        alert(
+            "Blog deleted successfully!"
+        );
+
+
+        // Refresh dashboard
+        location.reload();
 
     } catch (error) {
 
@@ -374,87 +718,141 @@ async function deleteBlog(blogId) {
 
 async function editBlog(blogId) {
 
-    try {
+    // Check login
+    if (!requireLogin()) {
+        return;
+    }
 
-        // Get existing blog
-        const response = await fetch(
-            `http://localhost:5000/api/blogs/${blogId}`
+    const token = getToken();
+
+
+    /*
+     * IMPORTANT:
+     *
+     * We do NOT make another GET request.
+     *
+     * The blog is already stored in
+     * blogsCache when the dashboard loads.
+     */
+
+    const blog =
+        blogsCache[blogId];
+
+
+    if (!blog) {
+
+        alert(
+            "Blog information not found. Please refresh the dashboard and try again."
         );
 
-        const blog = await response.json();
-
-        if (!response.ok) {
-
-            alert(
-                blog.message ||
-                "Blog not found"
-            );
-
-            return;
-        }
+        return;
+    }
 
 
-        // Edit title
-        const title = prompt(
+    // ===============================
+    // EDIT TITLE
+    // ===============================
+
+    const title =
+        prompt(
             "Enter new blog title:",
             blog.title
         );
 
-        if (title === null) {
+    if (title === null) {
+        return;
+    }
 
-            return;
-        }
 
+    // ===============================
+    // EDIT CATEGORY
+    // ===============================
 
-        // Edit category
-        const category = prompt(
+    const category =
+        prompt(
             "Enter new category:",
             blog.category
         );
 
-        if (category === null) {
+    if (category === null) {
+        return;
+    }
 
-            return;
-        }
 
+    // ===============================
+    // EDIT CONTENT
+    // ===============================
 
-        // Edit content
-        const content = prompt(
+    const content =
+        prompt(
             "Enter new blog content:",
             blog.content
         );
 
-        if (content === null) {
+    if (content === null) {
+        return;
+    }
+
+
+    // ===============================
+    // UPDATE BLOG
+    // ===============================
+
+    try {
+
+        const updateResponse =
+            await fetch(
+                `${API_URL}/api/blogs/${blogId}`,
+                {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+
+                        "Authorization":
+                            `Bearer ${token}`
+                    },
+
+                    body: JSON.stringify({
+                        title: title,
+                        category: category,
+                        content: content
+                    })
+                }
+            );
+
+
+        const data =
+            await updateResponse.json();
+
+
+        // Authentication error
+        if (
+            updateResponse.status === 401 ||
+            updateResponse.status === 403
+        ) {
+
+            alert(
+                "Your login session has expired. Please login again."
+            );
+
+            localStorage.removeItem(
+                "token"
+            );
+
+            localStorage.removeItem(
+                "user"
+            );
+
+            window.location.href =
+                "login.html";
 
             return;
         }
 
 
-        // Send updated blog
-        const updateResponse = await fetch(
-            `http://localhost:5000/api/blogs/${blogId}`,
-            {
-                method: "PUT",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify({
-
-                    title: title,
-
-                    category: category,
-
-                    content: content,
-
-                    author: blog.author
-                })
-            }
-        );
-
-        const data = await updateResponse.json();
-
+        // Other error
         if (!updateResponse.ok) {
 
             alert(
@@ -465,7 +863,16 @@ async function editBlog(blogId) {
             return;
         }
 
-        alert("Blog updated successfully!");
+
+        // Update cache
+        blogsCache[blogId] =
+            data.blog;
+
+
+        alert(
+            "Blog updated successfully!"
+        );
+
 
         // Refresh dashboard
         location.reload();

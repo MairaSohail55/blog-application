@@ -8,18 +8,26 @@ const blogSchema = new mongoose.Schema(
             trim: true
         },
 
-        category: {
-            type: String,
-            required: true
-        },
-
         content: {
             type: String,
             required: true
         },
 
+        category: {
+            type: String,
+            required: true
+        },
+
+        // Display name of the author
         author: {
             type: String,
+            required: true
+        },
+
+        // Actual owner of the blog
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
             required: true
         }
     },

@@ -324,3 +324,30 @@ footer {
 .delete-btn:hover {
     opacity: 0.8;
 }
+
+/* ===============================
+   PROFILE CARD
+   =============================== */
+
+.profile-card {
+    background: white;
+    padding: 25px;
+    margin: 30px 0;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    max-width: 500px;
+}
+
+.profile-card h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.profile-card p {
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+.profile-card strong {
+    margin-right: 5px;
+}
